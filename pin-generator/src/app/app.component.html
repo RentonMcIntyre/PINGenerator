@@ -7,10 +7,10 @@
 <mat-card>
   <mat-form-field class="example-form-field">
     <mat-label>How many PIN numbers do you wish to generate?</mat-label>
-    <input matInput [(ngModel)]="requestedPINs" type="number" min="1">
+    <input matInput [(ngModel)]="requestedPINs" type="number" min="1" required #input="ngModel">
   </mat-form-field>
 
-  <button mat-raised-button color="primary" [disabled]="!isSetupComplete" (click)="retrieveNewPINs()">
+  <button mat-raised-button color="primary" [disabled]="!isSetupComplete || input.invalid || requestedPINs < 1" (click)="retrieveNewPINs()">
     GENERATE
   </button>
   

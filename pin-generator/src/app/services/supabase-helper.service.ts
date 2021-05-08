@@ -20,11 +20,11 @@ export class SupabaseHelperService {
    */
   async getAllPINs()
   {
-  let { data: pins, count, error } = await this.db
-                                  .from<Pin>(this.tableName)
-                                  .select('*', { count:  'exact' }  );
+    let { data: pins, count, error } = await this.db
+                                    .from<Pin>(this.tableName)
+                                    .select('*', { count:  'exact' }  );
 
-  return { pins, error, count }
+    return { pins, error, count }
   }
 
   /**
@@ -51,17 +51,31 @@ export class SupabaseHelperService {
 
   /**
    * Queries the data store to retrieve a specified number of random PINs.
-   * Function on database handles selection of random PINs, prevention of reuse and rollover when all PINs have been allocated 
+   * Function on database handles selection of random PINs, prevention of reuse and rollover when all PINs have been allocated.
+   * See src/assets for reference on procedure implementation. 
    * @param requestedPINs The number of random PINs requested
    * @returns A list of PINs
    */
-  async getRandomPins(requestedPINs: number)
+  async getRandomPINs(requestedPINs: number)
   {
     let { data: pins, error } = await this.db
-                                .rpc('getrandompins', {
-                                  quantity: requestedPINs
-                                });
+                                      .rpc<Pin>('getrandompins', {
+                                        quantity: requestedPINs
+                                      });
 
     return { pins, error };
+  }
+
+  /**
+   * Executes a stored procedure on the database in order to reset all allocated pins.
+   * For usage once all pins have been allocated.
+   * See src/assets for reference on procedure implementation. 
+   */
+  async resetPinAllocation()
+  {
+    let { data, error } = await this.db
+                                .rpc('resetpinallocation');
+
+    return { data, error };
   }
 }

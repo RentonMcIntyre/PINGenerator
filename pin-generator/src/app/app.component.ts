@@ -1,6 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import {
+  MatSnackBar,
+  MatSnackBarHorizontalPosition,
+  MatSnackBarVerticalPosition,
+} from '@angular/material/snack-bar';
+
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Pin, PinState } from './models/pin';
 import { SupabaseHelperService } from './services/supabase-helper.service';
+import { DateAdapter } from '@angular/material/core';
+import { MatTable } from '@angular/material/table';
 
 @Component({
   selector: 'app-root',
@@ -13,14 +21,20 @@ export class AppComponent implements OnInit {
   requestedPINs: number = 1;
   isSetupComplete: boolean = false;
 
-  constructor(private supabaseService: SupabaseHelperService) {}
+  horizontalPosition: MatSnackBarHorizontalPosition = 'end';
+  verticalPosition: MatSnackBarVerticalPosition = 'bottom';
+
+  @ViewChild(MatTable)
+  table!: MatTable<any>;
+
+  constructor(private supabaseService: SupabaseHelperService, private _snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
     this.supabaseService.getAllPINs()
                         .then(data => {
                           if(data.error)
                           {
-                            console.log(data.error);
+                            this.openSnackBar(data.error.message);
                             return;
                           }
                           this.handleInitialConfig(data);
@@ -28,31 +42,74 @@ export class AppComponent implements OnInit {
     });
   }
 
+  /**
+   * Fired upon clicking the "GENERATE" button. 
+   * Uses service to retrieve the number of PINs requested by the user and wraps the handler for data reception
+   */
   retrieveNewPINs(): void {
-    this.supabaseService.getRandomPins(this.requestedPINs)
+    this.supabaseService.getRandomPINs(this.requestedPINs)
                         .then(data => {
-                          if(data.error)
-                          {
-                            console.log(data.error);
-                            return;
-                          }
-
-                          this.generatedPINs = (data?.pins ?? []);
-
-                          while((data.pins?.length ?? 0) < this.requestedPINs)
-                          {
-                            console.log(data.pins?.length);
-                            this.supabaseService.getRandomPins(this.requestedPINs)
-                                                .then(data => {
-                                                  if(data.error)
-                                                  {
-                                                    console.log(data.error);
-                                                    return;
-                                                  }
-                                                  this.generatedPINs = (data?.pins ?? []);
-                                                })
-                          }
+                          this.handleRandomPinReturn(data);
                         });
+  }
+
+  /**
+   * Handles the reception of randomly selected PINs and determins whether an allocation rollover is necessary.
+   * Assumes that in the unlikely event a user requested multiple times the total valid PINs, to retrieve a complete list of PINs could take multiple rollovers.
+   * @param data An object containing the random selection of PINs returned by the database.
+   */
+  private handleRandomPinReturn(data: { pins: any[] | null; error: { message: string; details: string; hint: string; code: string; } | null; }) {
+    if(data.error)
+    {
+      this.openSnackBar(data.error.message);
+      return;
+    }
+
+    this.generatedPINs = (data?.pins ?? []);
+    this.checkIfRolloverRequired();
+  }
+
+  /**
+   * Checks if rollover is required and initiates rollover if necessary. 
+   * Is called recursively, stopping when all PINs requested have been returned. 
+   */
+  private checkIfRolloverRequired() {
+    if (this.generatedPINs.length < this.requestedPINs) {
+      this.rolloverPinAllocation(this.requestedPINs - this.generatedPINs.length);
+    }
+  }
+
+  /**
+   * Handles the deallocation of all allocated PIN items when no unallocated PINs remain.
+   * @param remainingRequiredPins The number of PINs still required to be generated to complete the user's request after all allocated PINs are deallocated.
+   */
+  private rolloverPinAllocation(remainingRequiredPins: number) {
+    this.supabaseService.resetPinAllocation()
+      .then(data => {
+        if (data.error) {
+          this.openSnackBar(data.error.message);
+          return;
+        }
+        this.getRemainingRandomPINs(remainingRequiredPins);
+      });
+  }
+
+  /**
+   * Retrieves a list of PINs to add to the previously obtained PIN list, in the scenario where more PINs were requested than were available.
+   * @param remainingRequiredPins The number of PINs still required to be generated to complete the user's request after all allocated PINs are deallocated.
+   */
+  private getRemainingRandomPINs(remainingRequiredPins: number) {
+    this.supabaseService.getRandomPINs(remainingRequiredPins)
+      .then(data => {
+        if (data.error) {
+          this.openSnackBar(data.error.message);
+          return;
+        }
+
+        this.generatedPINs.push(...(data?.pins ?? []));
+        this.table.renderRows();
+        this.checkIfRolloverRequired();
+      });
   }
 
   /**
@@ -70,9 +127,9 @@ export class AppComponent implements OnInit {
       pins = this.createNewPinEntries();
     }
 
-    if (!this.NotAllowedHasBeenMarked(data.pins as Pin[])) {
+    if (!this.notAllowedHasBeenMarked(data.pins as Pin[])) {
       this.supabaseService.updatePINs(
-        this.GenerateInvalidPINs(pins)
+        this.generateInvalidPINs(pins)
       );
     }
   }
@@ -82,11 +139,11 @@ export class AppComponent implements OnInit {
    * @returns A list of all PINs that have been created
    */
   private createNewPinEntries(): Pin[] {
-    let addedPINs: Pin[] = this.GenerateNewPINs();
+    let addedPINs: Pin[] = this.generateNewPINs();
     this.supabaseService.addPINs(addedPINs)
       .then(response => {
         if (response.error) {
-          console.log(response.error);
+          this.openSnackBar(response.error.message);
           return;
         }
       });
@@ -98,7 +155,7 @@ export class AppComponent implements OnInit {
    * Generates a list of PINs covering all valid options from 0000-9999
    * @returns A list of PINs from 0000-9999
    */
-  private GenerateNewPINs(): Pin[] {
+  private generateNewPINs(): Pin[] {
     let unformattedPINs: number[] = Array.from(Array(10000).keys());
     
     return unformattedPINs.map(pin => {
@@ -114,7 +171,7 @@ export class AppComponent implements OnInit {
    * @param pins A list of PINs to be checked
    * @returns A boolean that indicates whether any of the provided PINs are marked NotAllowed
    */
-  private NotAllowedHasBeenMarked(pins: Pin[]): boolean {
+  private notAllowedHasBeenMarked(pins: Pin[]): boolean {
     return pins?.some(x => x.State == PinState.NotAllowed);
   }
 
@@ -123,7 +180,7 @@ export class AppComponent implements OnInit {
    * @param pins The list of unflagged PINs for reference
    * @returns A list of PINs to be marked as NotAllowed
    */
-  private GenerateInvalidPINs(pins: Pin[]): Pin[] {
+  private generateInvalidPINs(pins: Pin[]): Pin[] {
     let invalidPINs: Pin[] = pins.filter(x => 
                                           (x.PIN[0] === x.PIN[1] && x.PIN[2] == x.PIN[3])       ||             // Contains 2 sets of the same 2 values i.e. 5544
                                           (parseInt(x.PIN[0]) === parseInt(x.PIN[1])-1 && parseInt(x.PIN[0]) === parseInt(x.PIN[2])-2 
@@ -137,5 +194,17 @@ export class AppComponent implements OnInit {
     invalidPINs.forEach(x => x.State = PinState.NotAllowed);
 
     return invalidPINs;
+  }
+  
+  /**
+   * Displays a small message box primarily used for error reporting.
+   * @param message The message to be displayed in the snackbar.
+   */
+  private openSnackBar(message: string) {
+    const snackbarRef = this._snackBar.open(message, 'OK', {
+      duration: 10000,
+      horizontalPosition: this.horizontalPosition,
+      verticalPosition: this.verticalPosition,
+    });
   }
 }
