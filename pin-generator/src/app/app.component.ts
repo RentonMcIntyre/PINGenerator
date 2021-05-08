@@ -188,8 +188,9 @@ export class AppComponent implements OnInit {
                                           (parseInt(x.PIN[0]) === parseInt(x.PIN[1])+1 && parseInt(x.PIN[0]) === parseInt(x.PIN[2])+2 
                                                 && parseInt(x.PIN[0]) === parseInt(x.PIN[3])+3) ||             // Is descending sequence i.e. 4321
                                           x.PIN == x.PIN.split("").reverse().join("")           ||             // Is palindromic i.e. 4334
-                                          /^(19\d\d)|(200\d)|(201\d)|(202\d)|(\d\d)\5{1,}$/.test(x.PIN)        // Is a year that could be an valid human's birthyear or relevant in the next few years (1900->2029)
+                                          /^(19\d\d)|(200\d)|(201\d)|(202\d)|(\d\d)\5{1,}|(000\d)$/.test(x.PIN)        // Is a year that could be an valid human's birthyear or relevant in the next few years (1900->2029)
                                         );                                                                     // OR Contains 2 sets of a repeating 2 digit combo i.e. 2727
+                                                                                                               // OR Is in the range 0001-0009, which are likely easy to brute force manually
 
     invalidPINs.forEach(x => x.State = PinState.NotAllowed);
 
