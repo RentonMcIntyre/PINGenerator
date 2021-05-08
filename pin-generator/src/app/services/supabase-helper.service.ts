@@ -39,17 +39,6 @@ export class SupabaseHelperService {
   }
 
   /**
-   * Takes a list of PINs to be updated and updates all matching PINs in the data store with the provided data
-   * @param updatedPINs The list of PINs to be updated
-   */
-  async updatePINs(updatedPINs: Pin[]) {
-    const { data, error } = await this.db
-                                  .from<Pin>(this.tableName)
-                                  .upsert(updatedPINs);
-    return { data, error }
-  }
-
-  /**
    * Queries the data store to retrieve a specified number of random PINs.
    * Function on database handles selection of random PINs, prevention of reuse and rollover when all PINs have been allocated.
    * See src/assets for reference on procedure implementation. 

@@ -126,12 +126,6 @@ export class AppComponent implements OnInit {
     if (data.count == 0) {
       pins = this.createNewPinEntries();
     }
-
-    if (!this.notAllowedHasBeenMarked(data.pins as Pin[])) {
-      this.supabaseService.updatePINs(
-        this.generateInvalidPINs(pins)
-      );
-    }
   }
 
   /**
@@ -139,7 +133,8 @@ export class AppComponent implements OnInit {
    * @returns A list of all PINs that have been created
    */
   private createNewPinEntries(): Pin[] {
-    let addedPINs: Pin[] = this.generateNewPINs();
+    let addedPINs: Pin[] = this.generateInvalidPINs(this.generateNewPINs());
+
     this.supabaseService.addPINs(addedPINs)
       .then(response => {
         if (response.error) {
@@ -181,20 +176,18 @@ export class AppComponent implements OnInit {
    * @returns A list of PINs to be marked as NotAllowed
    */
   private generateInvalidPINs(pins: Pin[]): Pin[] {
-    let invalidPINs: Pin[] = pins.filter(x => 
-                                          (x.PIN[0] === x.PIN[1] && x.PIN[2] == x.PIN[3])       ||             // Contains 2 sets of the same 2 values i.e. 5544
-                                          (parseInt(x.PIN[0]) === parseInt(x.PIN[1])-1 && parseInt(x.PIN[0]) === parseInt(x.PIN[2])-2 
-                                                && parseInt(x.PIN[0]) === parseInt(x.PIN[3])-3) ||             // Is ascending sequence i.e. 1234
-                                          (parseInt(x.PIN[0]) === parseInt(x.PIN[1])+1 && parseInt(x.PIN[0]) === parseInt(x.PIN[2])+2 
-                                                && parseInt(x.PIN[0]) === parseInt(x.PIN[3])+3) ||             // Is descending sequence i.e. 4321
-                                          x.PIN == x.PIN.split("").reverse().join("")           ||             // Is palindromic i.e. 4334
-                                          /^(19\d\d)|(200\d)|(201\d)|(202\d)|(\d\d)\5{1,}|(000\d)$/.test(x.PIN)        // Is a year that could be an valid human's birthyear or relevant in the next few years (1900->2029)
-                                        );                                                                     // OR Contains 2 sets of a repeating 2 digit combo i.e. 2727
-                                                                                                               // OR Is in the range 0001-0009, which are likely easy to brute force manually
+    pins.filter(x => 
+                  (x.PIN[0] === x.PIN[1] && x.PIN[2] == x.PIN[3])       ||             // Contains 2 sets of the same 2 values i.e. 5544
+                  (parseInt(x.PIN[0]) === parseInt(x.PIN[1])-1 && parseInt(x.PIN[0]) === parseInt(x.PIN[2])-2 
+                        && parseInt(x.PIN[0]) === parseInt(x.PIN[3])-3) ||             // Is ascending sequence i.e. 1234
+                  (parseInt(x.PIN[0]) === parseInt(x.PIN[1])+1 && parseInt(x.PIN[0]) === parseInt(x.PIN[2])+2 
+                        && parseInt(x.PIN[0]) === parseInt(x.PIN[3])+3) ||             // Is descending sequence i.e. 4321
+                  x.PIN == x.PIN.split("").reverse().join("")           ||             // Is palindromic i.e. 4334
+                  /^(19\d\d)|(200\d)|(201\d)|(202\d)|(\d\d)\5{1,}|(000\d)$/.test(x.PIN)        // Is a year that could be an valid human's birthyear or relevant in the next few years (1900->2029)
+                )                                                                     // OR Contains 2 sets of a repeating 2 digit combo i.e. 2727
+                .forEach(x => x.State = PinState.NotAllowed);                                                                      // OR Is in the range 0001-0009, which are likely easy to brute force manually
 
-    invalidPINs.forEach(x => x.State = PinState.NotAllowed);
-
-    return invalidPINs;
+    return pins;
   }
   
   /**
