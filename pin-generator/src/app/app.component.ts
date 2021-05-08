@@ -11,11 +11,12 @@ export class AppComponent implements OnInit {
   generatedPINs: Pin[] = [];
   displayedColumns: string[] = ['PIN'];
   requestedPINs: number = 1;
+  isSetupComplete: boolean = false;
 
   constructor(private supabaseService: SupabaseHelperService) {}
 
   ngOnInit(): void {
-    this.supabaseService.getAllPins()
+    this.supabaseService.getAllPINs()
                         .then(data => {
                           if(data.error)
                           {
@@ -23,7 +24,35 @@ export class AppComponent implements OnInit {
                             return;
                           }
                           this.handleInitialConfig(data);
+                          this.isSetupComplete = true;
     });
+  }
+
+  retrieveNewPINs(): void {
+    this.supabaseService.getRandomPins(this.requestedPINs)
+                        .then(data => {
+                          if(data.error)
+                          {
+                            console.log(data.error);
+                            return;
+                          }
+
+                          this.generatedPINs = (data?.pins ?? []);
+
+                          while((data.pins?.length ?? 0) < this.requestedPINs)
+                          {
+                            console.log(data.pins?.length);
+                            this.supabaseService.getRandomPins(this.requestedPINs)
+                                                .then(data => {
+                                                  if(data.error)
+                                                  {
+                                                    console.log(data.error);
+                                                    return;
+                                                  }
+                                                  this.generatedPINs = (data?.pins ?? []);
+                                                })
+                          }
+                        });
   }
 
   /**
@@ -34,15 +63,15 @@ export class AppComponent implements OnInit {
    * will henceforth allow the application to be significantly more efficient on subsequent runs and PIN generation.
    * @param data An object containing all PINs currently stored in the data store
    */
-  private handleInitialConfig(data: { pins: Pin[] | null; error: { message: string; details: string; hint: string; code: string; } | null; }): void {
+  private handleInitialConfig(data: { pins: Pin[] | null; error: { message: string; details: string; hint: string; code: string; } | null; count: number | null }): void {
     let pins: Pin[] = data.pins ?? [];
 
-    if (data.pins?.length == 0) {
+    if (data.count == 0) {
       pins = this.createNewPinEntries();
     }
 
     if (!this.NotAllowedHasBeenMarked(data.pins as Pin[])) {
-      this.supabaseService.updatePins(
+      this.supabaseService.updatePINs(
         this.GenerateInvalidPINs(pins)
       );
     }
@@ -54,7 +83,7 @@ export class AppComponent implements OnInit {
    */
   private createNewPinEntries(): Pin[] {
     let addedPINs: Pin[] = this.GenerateNewPINs();
-    this.supabaseService.addPins(addedPINs)
+    this.supabaseService.addPINs(addedPINs)
       .then(response => {
         if (response.error) {
           console.log(response.error);
@@ -70,9 +99,9 @@ export class AppComponent implements OnInit {
    * @returns A list of PINs from 0000-9999
    */
   private GenerateNewPINs(): Pin[] {
-    let unformattedPins: number[] = Array.from(Array(10000).keys());
+    let unformattedPINs: number[] = Array.from(Array(10000).keys());
     
-    return unformattedPins.map(pin => {
+    return unformattedPINs.map(pin => {
                                 return {
                                   PIN: ('0000'+pin).slice(-4),
                                   State: PinState.Unallocated
@@ -95,7 +124,7 @@ export class AppComponent implements OnInit {
    * @returns A list of PINs to be marked as NotAllowed
    */
   private GenerateInvalidPINs(pins: Pin[]): Pin[] {
-    let invalidPins: Pin[] = pins.filter(x => 
+    let invalidPINs: Pin[] = pins.filter(x => 
                                           (x.PIN[0] === x.PIN[1] && x.PIN[2] == x.PIN[3])       ||             // Contains 2 sets of the same 2 values i.e. 5544
                                           (parseInt(x.PIN[0]) === parseInt(x.PIN[1])-1 && parseInt(x.PIN[0]) === parseInt(x.PIN[2])-2 
                                                 && parseInt(x.PIN[0]) === parseInt(x.PIN[3])-3) ||             // Is ascending sequence i.e. 1234
@@ -105,8 +134,8 @@ export class AppComponent implements OnInit {
                                           /^(19\d\d)|(200\d)|(201\d)|(202\d)|(\d\d)\5{1,}$/.test(x.PIN)        // Is a year that could be an valid human's birthyear or relevant in the next few years (1900->2029)
                                         );                                                                     // OR Contains 2 sets of a repeating 2 digit combo i.e. 2727
 
-    invalidPins.forEach(x => x.State = PinState.NotAllowed);
+    invalidPINs.forEach(x => x.State = PinState.NotAllowed);
 
-    return invalidPins;
+    return invalidPINs;
   }
 }

@@ -10,7 +10,7 @@
     <input matInput [(ngModel)]="requestedPINs" type="number" min="1">
   </mat-form-field>
 
-  <button mat-raised-button color="primary">
+  <button mat-raised-button color="primary" [disabled]="!isSetupComplete" (click)="retrieveNewPINs()">
     GENERATE
   </button>
   
