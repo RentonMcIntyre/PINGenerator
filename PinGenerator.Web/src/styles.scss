@@ -1,0 +1,124 @@
+
+// Custom Theming for Angular Material
+// For more information: https://material.angular.io/guide/theming
+@import '~@angular/material/theming';
+// Plus imports for other components in your app.
+
+// Include the common styles for Angular Material. We include this here so that you only
+// have to load a single css file for Angular Material in your app.
+// Be sure that you only ever include this mixin once!
+@include mat-core();
+
+// Define the palettes for your theme using the Material Design palettes available in palette.scss\
+$honey-text: #ffe4b2; 
+$honey-text-dark: #ffd27f;
+$dark-bg: #484848;
+
+$honey: (
+  50: #fff4e0,
+  100: #ffe4b2,
+  200: #ffd27f,
+  300: #ffc04a,
+  400: #ffb11f,
+  500: #ffa400,
+  600: #fd9700,
+  700: #f78700,
+  800: #f27700,
+  900: #ea5d00,
+  A100: #ffd27f,
+  A200: #ffd27f,
+  A400: #ffd27f,
+  A700: #ffd27f,
+  contrast: (
+    50: white,
+    100: white,
+    200: white,
+    300: white,
+    400: white,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: white,
+    A200: white,
+    A400: white,
+    A700: white,
+  )
+);
+
+$turqoise-text: #2cb5b3;
+
+$turqoise: (
+  50: #def2f2,
+  100: #acdfde,
+  200: #73cac9,
+  300: #2cb5b3,
+  400: #00a5a1,
+  500: #00958f,
+  600: #008881,
+  700: #007870,
+  800: #006860,
+  900: #004c43,
+  A100: #2CB5B3,
+  A200: #2CB5B3,
+  A400: #2CB5B3,
+  A700: #2CB5B3,
+  contrast: (
+    50: white,
+    100: white,
+    200: white,
+    300: white,
+    400: white,
+    500: white,
+    600: white,
+    700: white,
+    800: white,
+    900: white,
+    A100: white,
+    A200: white,
+    A400: white,
+    A700: white,
+  )
+);
+
+// (imported above). For each palette, you can optionally specify a default, lighter, and darker
+// hue. Available color palettes: https://material.io/design/color/
+$primary: mat-palette($turqoise, 300, 100, 700);
+$accent: mat-palette($honey, 200, 100, 300);
+
+// The warn palette is optional (defaults to red).
+$warn: mat-palette($mat-red);
+
+// Create the theme object. A theme consists of configurations for individual
+// theming systems such as "color" or "typography".
+$theme: mat-dark-theme((
+  color: (
+    primary: $primary,
+    accent: $accent,
+    warn: $warn,
+  )
+));
+
+$background-color: #628cc9;
+
+$background: map-get($theme, background);
+$background: map_merge($background, (background: $background-color));
+$theme: map_merge($theme, (background: $background));
+
+// Include theme styles for core and each component used in your app.
+// Alternatively, you can import and @include the theme mixins for each component
+// that you are using.
+@include angular-material-theme($theme);
+
+/* You can add global styles to this file, and also import other style files */
+
+html, body { 
+  background-color: $dark-bg;
+  color: $honey-text;
+  height: 100%;
+  box-sizing:border-box;
+  margin: 0;
+  
+  font-size: 30px !important;
+}

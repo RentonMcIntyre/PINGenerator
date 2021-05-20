@@ -1,0 +1,11 @@
+{
+  "targets": {
+    "pingenerator-f6adc": {
+      "hosting": {
+        "pin-generator": [
+          "pingenerator-f6adc"
+        ]
+      }
+    }
+  }
+}

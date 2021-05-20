@@ -102,3 +102,12 @@ dist
 
 # TernJS port file
 .tern-port
+
+#.NET Debug folders
+Debug/
+
+#.NET Obj folders
+Obj/
+
+#Visual Studio folders
+.vs/

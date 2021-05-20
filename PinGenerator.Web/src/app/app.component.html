@@ -1,0 +1,29 @@
+<mat-toolbar color="primary">
+  <mat-toolbar-row>
+      <strong class="center">PIN Generator</strong>
+  </mat-toolbar-row>
+</mat-toolbar>
+
+<mat-card>
+  <mat-form-field class="example-form-field">
+    <mat-label>How many PIN numbers do you wish to generate?</mat-label>
+    <input matInput [(ngModel)]="requestedPINs" type="number" min="1" pattern="\d+/*" required #input="ngModel">
+  </mat-form-field>
+
+  <button mat-raised-button color="primary" [disabled]="!isSetupComplete || input.invalid || requestedPINs < 1" (click)="retrieveNewPINs()"
+          matTooltip="Request a number of 4 digit PIN strings. Note that some filtering has been done to avoid overly obvious PINs from being returned, such as 1234 or 4444.">
+    GENERATE
+  </button>
+  
+  <mat-card-content>
+    <table mat-table [dataSource]="generatedPINs">
+      <ng-container matColumnDef="pinString">
+        <th mat-header-cell *matHeaderCellDef> PIN </th>
+        <td *matCellDef="let pin"> {{pin.pinString}} </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>    
+  </mat-card-content>
+</mat-card>
