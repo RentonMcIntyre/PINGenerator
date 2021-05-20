@@ -1,0 +1,48 @@
+mat-card {
+    width: 100%;
+    align-items: center;
+    
+    mat-card-content {
+        width: 95%;
+        align-items: center;
+        table {
+            width: 100%;
+            align-items: center;
+
+            tr {
+                align-items: center;
+                text-align: center;
+            }
+            td {
+                text-align: center;
+                align-items: center;
+                    float: right
+            }
+        }
+    }
+}
+
+mat-form-field {
+    width: 50%;
+}
+
+button {
+    width: 45%; 
+    margin-left: 20px;
+}
+
+:host ::ng-deep input {
+    text-align: center !important;
+    font-size: 30px !important;
+}
+
+:host ::ng-deep td {
+    text-align: center !important;
+    font-size: 30px !important;
+}
+
+:host ::ng-deep th {
+    text-align: center !important;
+    font-size: 30px !important;
+    font-weight: bold !important;
+}
